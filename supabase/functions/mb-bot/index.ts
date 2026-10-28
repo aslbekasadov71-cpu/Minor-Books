@@ -51,7 +51,7 @@ async function shopButtons(chat: number, admin: boolean, intro: string) {
   const s = await secrets();
   // Telegram URL'dagi #hash qismini o'z ma'lumotlari bilan almashtiradi, shuning uchun rejim ?mode= orqali beriladi.
   // v= — Telegram eski sahifani keshdan ochmasligi uchun.
-  const base = s.app_url.split("#")[0], sep = base.includes("?") ? "&" : "?", V = "v=3";
+  const base = s.app_url.split("#")[0], sep = base.includes("?") ? "&" : "?", V = "v=4";
   const rows: unknown[][] = [[{ text: "📚 Do'konni ochish", web_app: { url: `${base}${sep}${V}` } }]];
   if (admin) rows.push([{ text: "⚙️ Admin panel", web_app: { url: `${base}${sep}${V}&mode=admin` } }]);
   // avval oddiy klaviaturani olib tashlaymiz, keyin tugmali xabar

@@ -1,6 +1,7 @@
 // Minor Books — server API: admin amallari va buyurtma xabarnomasi.
 // Admin bo'lishi Telegram initData imzosi (bot tokeni bilan) va mb_admins jadvali orqali tekshiriladi.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { lookupBook } from "./lookup.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false },
@@ -121,6 +122,15 @@ Deno.serve(async (req) => {
     // ochiq amal: yangi buyurtma haqida xabar
     if (action === "notify") return json(await notifyOrder(String(body.order_no || "")));
 
+    // xizmat tekshiruvi (faqat maxfiy kalit bilan): kitob qidiruvini sinash
+    if (action === "lookup_test") {
+      const { data: sec } = await db.from("mb_secrets").select("value").eq("key", "webhook_secret").single();
+      if (!sec || body.secret !== sec.value) return fail("forbidden", 403);
+      const out = [];
+      for (const t of (body.items || []).slice(0, 20)) out.push({ q: t, r: await lookupBook(t.title, t.author || null).catch((e) => ({ error: String(e) })) });
+      return json({ out });
+    }
+
     const user = await tgUser(body.initData);
     const admin = await isAdmin(user?.id);
     if (action === "whoami") return json({ admin, user: user ? { id: user.id, first_name: user.first_name } : null });
@@ -174,6 +184,23 @@ Deno.serve(async (req) => {
           await tgSend(data.tg_user_id, `📦 Buyurtma <b>${h(data.order_no)}</b> holati: <b>${STATUS[status]}</b>`).catch(() => {});
         }
         return json({ order: data });
+      }
+      case "lookup_book": {
+        const r: any = await lookupBook(String(body.title || ""), body.author ? String(body.author) : null);
+        // muqovani o'z omborimizga ko'chiramiz (begona sayt rasmi keyinchalik o'chib ketmasligi uchun)
+        if (r.found && r.cover && body.want_cover) {
+          try {
+            const img = await fetch(r.cover, { headers: { "User-Agent": "Mozilla/5.0" }, signal: AbortSignal.timeout(9000) });
+            const type = (img.headers.get("content-type") || "image/jpeg").split(";")[0];
+            const bytes = new Uint8Array(await img.arrayBuffer());
+            if (img.ok && bytes.length > 2000 && bytes.length < 5 * 1024 * 1024 && type.startsWith("image/")) {
+              const path = `books/${crypto.randomUUID()}.${type.includes("png") ? "png" : type.includes("webp") ? "webp" : "jpg"}`;
+              const { error } = await db.storage.from("mb-covers").upload(path, bytes, { contentType: type, upsert: false });
+              if (!error) r.cover = db.storage.from("mb-covers").getPublicUrl(path).data.publicUrl;
+            }
+          } catch { /* muqovasiz qaytaramiz */ }
+        }
+        return json(r);
       }
       case "upload_cover": {
         const type = String(body.contentType || "image/jpeg");
