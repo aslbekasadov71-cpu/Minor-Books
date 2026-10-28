@@ -219,8 +219,10 @@ export async function lookupIsbn(code: string) {
   // hilolnashr sahifalarida ISBN "978-9943-9425-4-7" ko'rinishida yozilgan; chiziqchalar joyini bilmaymiz,
   // shuning uchun O'zbekiston (9943) prefiksi uchun barcha variantlarni sinaymiz
   const terms: string[] = [];
-  if (d.length === 13 && d.startsWith("9789943")) {
-    for (let L = 1; L <= 4; L++) terms.push(`9943-${d.slice(7, 7 + L)}-${d.slice(7 + L, 12)}-${d[12]}`);
+  if (d.length === 13 && (d.startsWith("9789943") || d.startsWith("9789910"))) {
+    // O'zbekiston guruhlari: 978-9943 va 978-9910
+    const g = d.slice(3, 7);
+    for (let L = 1; L <= 4; L++) terms.push(`${g}-${d.slice(7, 7 + L)}-${d.slice(7 + L, 12)}-${d[12]}`);
   } else if (d.length === 13 && d.startsWith("978")) {
     terms.push(d.slice(3, 12));
   }
