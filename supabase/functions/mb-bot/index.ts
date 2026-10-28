@@ -49,8 +49,11 @@ const askLocation = (chat: number) =>
 
 async function shopButtons(chat: number, admin: boolean, intro: string) {
   const s = await secrets();
-  const rows: unknown[][] = [[{ text: "📚 Do'konni ochish", web_app: { url: s.app_url } }]];
-  if (admin) rows.push([{ text: "⚙️ Admin panel", web_app: { url: s.app_url + "#admin" } }]);
+  // Telegram URL'dagi #hash qismini o'z ma'lumotlari bilan almashtiradi, shuning uchun rejim ?mode= orqali beriladi.
+  // v= — Telegram eski sahifani keshdan ochmasligi uchun.
+  const base = s.app_url.split("#")[0], sep = base.includes("?") ? "&" : "?", V = "v=3";
+  const rows: unknown[][] = [[{ text: "📚 Do'konni ochish", web_app: { url: `${base}${sep}${V}` } }]];
+  if (admin) rows.push([{ text: "⚙️ Admin panel", web_app: { url: `${base}${sep}${V}&mode=admin` } }]);
   // avval oddiy klaviaturani olib tashlaymiz, keyin tugmali xabar
   await send(chat, intro, REMOVE);
   await send(chat, admin ? "Do'konni ochish yoki do'konni boshqarish uchun tugmani tanlang:" : "Kitoblarni ko'rish va buyurtma berish uchun bosing:", { inline_keyboard: rows });

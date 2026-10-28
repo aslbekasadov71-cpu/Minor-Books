@@ -420,6 +420,78 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .adm .aline>.i .d2,.aseg .i .d2{color:var(--ic2);opacity:1}
 .aseg button[aria-pressed="false"] .i{opacity:.6}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ===== v2: "Kitob" ilovasi uslubi — kulrang fon, oq kartochkalar, ko'k aksent ===== */
+:root{--bg:#F2F4F8;--card:#FFFFFF;--blue:#3D6FE8;--blue-2:#6B92F5;--blue-soft:#EAF0FF;--ic1:#3D6FE8;--ic2:#A9C0FA;--cream:#EEF2FB;--soft:#F2F4F8;--line:#E6E9F0}
+html,body,body::before,.bar{background:var(--bg)}
+.bar{padding-block:12px}
+.bar img{box-shadow:0 1px 3px rgba(20,26,38,.12)}
+.search{background:#fff;border-radius:999px;box-shadow:0 1px 2px rgba(20,26,38,.06)}
+.search:focus-within{background:#fff}
+.ibtn{background:#fff;border-radius:50%;box-shadow:0 1px 2px rgba(20,26,38,.06)}
+.ibtn .i,.ibtn .i .d2{color:#141A26!important}
+/* bannerlar: yorug' "TOP 10" uslubi */
+.bn{background:linear-gradient(120deg,#E9F0FF 0%,#F7FAFF 55%,#DDE8FF 100%)!important;color:#141A26;box-shadow:0 1px 3px rgba(20,26,38,.06),0 8px 22px rgba(61,111,232,.10)}
+.bn::before{opacity:.0}.bn::after{background:radial-gradient(circle,rgba(61,111,232,.14),transparent 65%)}
+.bn .k{color:var(--blue);opacity:1}
+.bn h3{font-weight:800;color:#141A26}
+.bn .go{background:var(--blue);color:#fff}
+.bn .go .i{color:#fff}
+.dots span{background:#D5DBE7}
+/* bo'limlar */
+.cats{padding-block:18px 2px}
+.ct .ti{background:#fff!important;box-shadow:0 1px 3px rgba(20,26,38,.06);border-radius:22px}
+.sec{background:#fff;border-radius:26px;padding:18px 0 18px;margin:16px -6px 0;box-shadow:0 1px 2px rgba(20,26,38,.04)}
+.sec>.sec-h{padding:0 16px;margin-bottom:14px}
+.sec>.rail{margin-inline:0!important;padding-inline:16px!important}
+.sec>.grid{padding:0 12px}
+.sec-h h2{font-size:21px;font-weight:600;letter-spacing:-.01em}
+.sec-h h2 .i{display:none}
+.sec-h .all{background:var(--soft);color:#5C6478;border-radius:999px;padding:7px 10px 7px 14px;font-size:13px;font-weight:500}
+.sec-h .all .i{width:16px;height:16px}
+/* kitob kartochkasi */
+.pc{background:#fff;border-radius:20px;padding:8px 8px 10px;gap:8px;box-shadow:0 1px 2px rgba(20,26,38,.05),0 6px 18px rgba(20,26,38,.06)}
+.sec .pc{box-shadow:0 0 0 1px #EEF0F5,0 4px 14px rgba(20,26,38,.05)}
+.rail .pc{flex:0 0 172px}
+.pimg{border-radius:14px}
+.pc .open{gap:4px}
+.pc .nm{order:1;font-weight:500;font-size:14.5px;line-height:1.3;color:#141A26;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em;padding:2px 2px 0}
+.pc .au{order:2;font-size:12.5px;color:#8A91A3;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc .open>.price{display:none}
+.pc .low{order:3;padding:0 2px}
+.ppl{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:4px;background:#F2F4F8;border-radius:999px;padding:5px 5px 5px 11px;min-height:44px}
+.ppl .pr{display:grid;line-height:1.1;min-width:0}
+.ppl .pr b{font-weight:600;font-size:13.5px;white-space:nowrap;letter-spacing:-.01em}
+.ppl .pr b.s{color:var(--red)}
+.ppl .pr s{font-size:11.5px;color:#9AA1B2}
+.ppl .add{width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 4px 10px rgba(61,111,232,.35)}
+.ppl .add .i,.ppl .add .i .d2{color:#fff!important;opacity:1}
+.ppl .add:disabled{background:#D5DBE7;box-shadow:none}
+.ppl .qty{display:flex;align-items:center;gap:2px;background:#fff;border-radius:999px;padding:2px}
+.ppl .qty button{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--blue)}
+.ppl .qty button:disabled{opacity:.35}
+.ppl .qty span{min-width:18px;text-align:center;font-weight:700;font-size:14px}
+.fav{box-shadow:0 1px 3px rgba(20,26,38,.12)}
+.tagx .n{color:var(--blue)}
+/* afzalliklar */
+.perks div{background:#fff;box-shadow:0 1px 2px rgba(20,26,38,.05)}
+/* pastki menyu: faqat ikonkalar, faol — ko'k va nuqta */
+.tabs{background:#fff;border-top:1px solid var(--line)}
+.tabs button{font-size:0;gap:0;padding:10px 0 12px}
+.tabs button>*:not(.tic):not(.cnt){display:none}
+.tabs .tic{width:48px;height:34px}
+.tabs button[aria-current="page"] .tic{background:transparent}
+.tabs button[aria-current="page"]::after{content:"";position:absolute;bottom:5px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--blue)}
+.tabs button[aria-current="page"] .i,.tabs button[aria-current="page"] .i .d2{color:var(--blue)!important}
+.tabs .cnt{top:4px;box-shadow:0 0 0 2px #fff}
+#app{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+
+/* admin — oq kartochkalar */
+.adm{background:var(--bg)}
+.astats div{background:#fff;box-shadow:0 1px 2px rgba(20,26,38,.05)}
+.arow{background:#fff;border:0;border-radius:18px;padding:10px 12px;margin-bottom:8px;box-shadow:0 1px 2px rgba(20,26,38,.05)}
+.ord{background:#fff;border-radius:18px;box-shadow:0 1px 2px rgba(20,26,38,.05)}
+.adm-btn{background:#fff}
 </style>
 </head>
 <body>
@@ -721,6 +793,15 @@ function buyCtl(b){
   if(!q) return `<button class="buy" data-add="${b.id}">${ic("cartAdd",19)}Savatga</button>`;
   return `<div class="step num"><button data-dec="${b.id}" aria-label="Kamaytirish">${ic("sub",20)}</button><span>${q}</span><button data-inc="${b.id}" aria-label="Ko'paytirish" ${q>=b.stock?"disabled":""}>${ic("add",20)}</button></div>`;
 }
+function pricePill(b,d){
+  const q=S.cart[b.id]||0;
+  const pr=`<span class="pr num">${d?`<s>${som(b.old_price)}</s>`:""}<b class="${d?"s":""}">${som(b.price)}</b></span>`;
+  let ctl;
+  if(b.stock<=0) ctl=`<button class="add" disabled aria-label="Sotuvda yo'q">${ic("cartAdd",18)}</button>`;
+  else if(!q) ctl=`<button class="add press" data-add="${b.id}" aria-label="Savatga qo'shish">${ic("cartAdd",18)}</button>`;
+  else ctl=`<span class="qty num"><button data-dec="${b.id}" aria-label="Kamaytirish">${ic("sub",18)}</button><span>${q}</span><button data-inc="${b.id}" aria-label="Ko'paytirish" ${q>=b.stock?"disabled":""}>${ic("add",18)}</button></span>`;
+  return `<div class="ppl">${pr}${ctl}</div>`;
+}
 function card(b,i=0){
   const d=disc(b);
   const tags=[b.stock<=0?`<span class="o">Tugagan</span>`:"", d?`<span class="s">-${d}%</span>`:"", b.is_new&&b.stock>0?`<span class="n">${ic("fire",12)}Yangi</span>`:""].join("");
@@ -730,7 +811,7 @@ function card(b,i=0){
       <div class="price num">${d?`<s>${som(b.old_price)}</s>`:""}<b class="${d?"s":""}">${som(b.price)}</b></div>
       <div class="nm">${esc(b.title)}</div><div class="au">${esc(b.author||"")}</div>
       ${b.stock>0&&b.stock<=5?`<div class="low">Faqat ${b.stock} dona qoldi</div>`:""}
-    </button>${buyCtl(b)}</article>`;
+    </button>${pricePill(b,d)}</article>`;
 }
 const skelGrid = n => `<div class="grid">${Array.from({length:n},()=>`<div><div class="skel" style="aspect-ratio:1/1.12"></div><div class="skel" style="height:14px;margin-top:10px;width:70%"></div><div class="skel" style="height:12px;margin-top:8px"></div></div>`).join("")}</div>`;
 
@@ -915,7 +996,9 @@ function setupBanners(){
 // faqat o'zgargan kartalarni yangilash (sahifa sakramasligi uchun)
 function refreshBookUI(id){
   const b=book(id);
-  document.querySelectorAll(`#app [data-add="${id}"],#app [data-dec="${id}"]`).forEach(el=>{ const box=el.closest(".step")||el; box.outerHTML=buyCtl(b); });
+  const pps=new Set();document.querySelectorAll(`#app .ppl [data-add="${id}"],#app .ppl [data-dec="${id}"],#app .ppl [data-inc="${id}"]`).forEach(el=>pps.add(el.closest(".ppl")));
+  pps.forEach(p=>{ p.outerHTML=pricePill(b,disc(b)); });
+  document.querySelectorAll(`#app [data-add="${id}"]:not(.add),#app .step [data-dec="${id}"]`).forEach(el=>{ const box=el.closest(".step")||el; box.outerHTML=buyCtl(b); });
   document.querySelectorAll(`#app .step [data-inc="${id}"]`).forEach(el=>{ el.disabled=(S.cart[id]||0)>=b.stock; const s=el.parentElement.querySelector("span"); if(s) s.textContent=S.cart[id]||0; });
   refreshBook(); renderTabs();
 }
@@ -1197,7 +1280,7 @@ document.addEventListener("submit",async e=>{
   }catch(err){ A.busy=false; A.err=err.message; renderAdmin(false); }
 },true);
 
-const ADMIN_MODE = location.hash==="#admin";
+const ADMIN_MODE = new URLSearchParams(location.search).get("mode")==="admin" || location.hash.indexOf("#admin")===0 || ((window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.start_param)==="admin");
 // bot orqali yuborilgan ma'lumotlar bilan buyurtma formasini to'ldirish
 async function loadProfile(){
   if(S.demo){ S.isAdmin=true; if(ADMIN_MODE) openAdmin(); else render(false); return; }
@@ -1218,7 +1301,7 @@ async function loadProfile(){
 }
 function denyAdmin(){
   $("#admRoot").innerHTML=`<div class="adm" id="adm"><div class="adm-in gut"><div class="empty" style="padding-top:80px"><div class="eic">${ic("shield",48)}</div><h3>Bu bo'lim faqat do'kon egasi uchun</h3><p>Kitoblarni ko'rish va buyurtma berish uchun do'konni oching.</p><button class="btn sm press" id="toShop">Do'konni ochish</button></div></div></div>`;
-  $("#toShop").onclick=()=>{ $("#admRoot").innerHTML=""; history.replaceState(null,"",location.pathname); };
+  $("#toShop").onclick=()=>{ $("#admRoot").innerHTML=""; history.replaceState(null,"",location.pathname); location.reload(); };
 }
 
 init().then(loadProfile);
