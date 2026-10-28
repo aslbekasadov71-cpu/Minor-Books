@@ -80,8 +80,8 @@ async function get(url: string, ms = 9000) {
 }
 
 type Cand = { url: string; name: string; img: string | null; s: number };
-async function hilolSearch(q: string): Promise<Cand[]> {
-  const html = await get(`${HILOL}/index.php?route=product/search&search=${encodeURIComponent(q)}&limit=30`);
+async function hilolSearch(q: string, inDesc = false): Promise<Cand[]> {
+  const html = await get(`${HILOL}/index.php?route=product/search&search=${encodeURIComponent(q)}&limit=30${inDesc ? "&description=true" : ""}`);
   const i = html.indexOf('id="content"');
   const body = i >= 0 ? html.slice(i) : html;
   const out: Cand[] = [];
@@ -142,6 +142,7 @@ async function hilolProduct(c: Cand) {
   return {
     title: cyr2lat(c.name).replace(/^«|»$/g, "").replace(/«|»/g, "").trim(),
     author, publisher, pages, description: description ? shorten(description) : null, cover: big || null, source: c.url,
+    isbn: (field(text, /ISBN/) || "").replace(/[^\dX]/gi, "") || null,
   };
 }
 
@@ -181,7 +182,7 @@ export async function lookupBook(title: string, author: string | null) {
   const key = [...qt].sort((a, b) => b.length - a.length).slice(0, 2).join(" ");
   const queries = [lat2cyr(key), key, lat2cyr(qt[0])];
   const seen = new Map<string, Cand>();
-  const lists = await Promise.allSettled(queries.map(hilolSearch));
+  const lists = await Promise.allSettled(queries.map((q) => hilolSearch(q)));
   for (const l of lists) if (l.status === "fulfilled") for (const c of l.value) if (!seen.has(c.url)) seen.set(c.url, c);
   // kitob uchun aksessuarlar (jild, muqova, quti) kitobning o'zi emas
   const ACC = /(^|\s|\()(jild|muqova|g'ilof|quti|xatcho'p)\b[^)]*\buchun\b|^jild\b|^g'ilof\b|^xatcho'p/i;
@@ -209,4 +210,43 @@ export async function lookupBook(title: string, author: string | null) {
     if (o && (o.pages || (o.description && o.description.length > 40))) return { found: true, ...o, publisher: cleanPub(o.publisher), match: 80 };
   } catch { /* e'tiborsiz */ }
   return { found: false, reason: "Internetda bu kitob haqida ma'lumot topilmadi" };
+}
+
+/** Shtrix kod (ISBN / EAN-13) bo'yicha qidirish. */
+export async function lookupIsbn(code: string) {
+  const d = String(code || "").replace(/\D/g, "");
+  if (d.length < 8) return { found: false, reason: "Shtrix kod noto'g'ri" };
+  // hilolnashr sahifalarida ISBN "978-9943-9425-4-7" ko'rinishida yozilgan; chiziqchalar joyini bilmaymiz,
+  // shuning uchun O'zbekiston (9943) prefiksi uchun barcha variantlarni sinaymiz
+  const terms: string[] = [];
+  if (d.length === 13 && d.startsWith("9789943")) {
+    for (let L = 1; L <= 4; L++) terms.push(`9943-${d.slice(7, 7 + L)}-${d.slice(7 + L, 12)}-${d[12]}`);
+  } else if (d.length === 13 && d.startsWith("978")) {
+    terms.push(d.slice(3, 12));
+  }
+  terms.push(d);
+  const seen = new Map<string, Cand>();
+  const lists = await Promise.allSettled(terms.map((t) => hilolSearch(t, true)));
+  for (const l of lists) if (l.status === "fulfilled") for (const c of l.value.slice(0, 6)) if (!seen.has(c.url)) seen.set(c.url, c);
+  const cands = [...seen.values()].slice(0, 8);
+  const prods = await Promise.allSettled(cands.map(hilolProduct));
+  for (const pr of prods) {
+    if (pr.status !== "fulfilled") continue;
+    const isbn = pr.value.isbn || "";
+    if (isbn && (isbn === d || (d.length === 13 && isbn.length === 10 && d.slice(3, 12) === isbn.slice(0, 9)))) {
+      return { found: true, ...pr.value, match: 100 };
+    }
+  }
+  // Open Library (xorijiy kitoblar uchun)
+  try {
+    const j = JSON.parse(await get(`https://openlibrary.org/isbn/${d}.json`, 7000));
+    if (j && j.title) {
+      return {
+        found: true, title: j.title, author: null, publisher: cleanPub(j.publishers?.[0] || null), pages: j.number_of_pages || null,
+        description: typeof j.description === "string" ? j.description : j.description?.value || null,
+        cover: j.covers?.[0] ? `https://covers.openlibrary.org/b/id/${j.covers[0]}-L.jpg` : null, source: `https://openlibrary.org/isbn/${d}`, match: 100,
+      };
+    }
+  } catch { /* topilmadi */ }
+  return { found: false, reason: "Bu shtrix kod bo'yicha kitob topilmadi" };
 }

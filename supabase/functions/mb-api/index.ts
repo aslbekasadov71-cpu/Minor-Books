@@ -1,7 +1,7 @@
 // Minor Books — server API: admin amallari va buyurtma xabarnomasi.
 // Admin bo'lishi Telegram initData imzosi (bot tokeni bilan) va mb_admins jadvali orqali tekshiriladi.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
-import { lookupBook } from "./lookup.ts";
+import { lookupBook, lookupIsbn } from "./lookup.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false },
@@ -96,7 +96,7 @@ async function notifyOrder(order_no: string) {
   return { sent: true };
 }
 
-const BOOK_FIELDS = ["title", "author", "category_id", "price", "old_price", "pages", "publisher", "stock", "is_new", "is_active", "cover_url", "description"];
+const BOOK_FIELDS = ["title", "author", "category_id", "price", "old_price", "pages", "publisher", "stock", "is_new", "is_active", "cover_url", "description", "barcode"];
 function cleanBook(b: any) {
   const out: Record<string, unknown> = {};
   for (const k of BOOK_FIELDS) if (k in b) out[k] = b[k] === "" ? null : b[k];
@@ -107,6 +107,7 @@ function cleanBook(b: any) {
   if (out.price == null) throw new Error("Narxni yozing");
   if (out.stock == null) out.stock = 0;
   if (out.old_price != null && Number(out.old_price) <= Number(out.price)) out.old_price = null;
+  if (out.barcode != null) out.barcode = String(out.barcode).replace(/\s+/g, "") || null;
   out.updated_at = new Date().toISOString();
   return out;
 }
@@ -127,7 +128,7 @@ Deno.serve(async (req) => {
       const { data: sec } = await db.from("mb_secrets").select("value").eq("key", "webhook_secret").single();
       if (!sec || body.secret !== sec.value) return fail("forbidden", 403);
       const out = [];
-      for (const t of (body.items || []).slice(0, 20)) out.push({ q: t, r: await lookupBook(t.title, t.author || null).catch((e) => ({ error: String(e) })) });
+      for (const t of (body.items || []).slice(0, 20)) out.push({ q: t, r: await (t.isbn ? lookupIsbn(t.isbn) : lookupBook(t.title, t.author || null)).catch((e) => ({ error: String(e) })) });
       return json({ out });
     }
 
@@ -150,6 +151,10 @@ Deno.serve(async (req) => {
       case "save_book": {
         const b = cleanBook(body.book || {});
         const id = body.book?.id;
+        if (b.barcode) {
+          const { data: dup } = await db.from("mb_books").select("id,title").eq("barcode", b.barcode).neq("id", id || 0).limit(1).maybeSingle();
+          if (dup) throw new Error(`Bu shtrix kod «${dup.title}» kitobiga biriktirilgan`);
+        }
         const q = id ? db.from("mb_books").update(b).eq("id", id).select().single() : db.from("mb_books").insert(b).select().single();
         const { data, error } = await q;
         if (error) throw error;
@@ -185,8 +190,49 @@ Deno.serve(async (req) => {
         }
         return json({ order: data });
       }
+      case "list_banners": {
+        const { data, error } = await db.from("mb_banners").select("*").order("sort").order("id");
+        if (error) throw error;
+        return json({ banners: data });
+      }
+      case "save_banner": {
+        const b = body.banner || {};
+        const row: Record<string, unknown> = {
+          kicker: String(b.kicker || "").trim().slice(0, 40) || null,
+          title: String(b.title || "").trim().slice(0, 90),
+          link_type: String(b.link_type || "none"),
+          link_value: b.link_value == null || b.link_value === "" ? null : Number(b.link_value),
+          tone: String(b.tone || "blue").slice(0, 20),
+          image_url: b.image_url ? String(b.image_url).slice(0, 600) : null,
+          is_active: b.is_active !== false,
+          updated_at: new Date().toISOString(),
+        };
+        if (!row.title) throw new Error("Banner sarlavhasini yozing");
+        if (!["new", "sale", "cat", "book", "catalog", "none"].includes(row.link_type as string)) throw new Error("Havola turi noto'g'ri");
+        if ((row.link_type === "cat" || row.link_type === "book") && !row.link_value) throw new Error(row.link_type === "cat" ? "Bo'limni tanlang" : "Kitobni tanlang");
+        if (!b.id) {
+          const { data: last } = await db.from("mb_banners").select("sort").order("sort", { ascending: false }).limit(1).maybeSingle();
+          row.sort = (last?.sort ?? 0) + 1;
+        }
+        const q = b.id ? db.from("mb_banners").update(row).eq("id", b.id).select().single() : db.from("mb_banners").insert(row).select().single();
+        const { data, error } = await q;
+        if (error) throw error;
+        return json({ banner: data });
+      }
+      case "delete_banner": {
+        const { error } = await db.from("mb_banners").delete().eq("id", body.id);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+      case "reorder_banners": {
+        const ids: number[] = (body.ids || []).map(Number).filter(Boolean).slice(0, 50);
+        for (let i = 0; i < ids.length; i++) await db.from("mb_banners").update({ sort: i + 1 }).eq("id", ids[i]);
+        return json({ ok: true });
+      }
+      case "lookup_isbn":
       case "lookup_book": {
-        const r: any = await lookupBook(String(body.title || ""), body.author ? String(body.author) : null);
+        const r: any = action === "lookup_isbn" ? await lookupIsbn(String(body.code || ""))
+          : await lookupBook(String(body.title || ""), body.author ? String(body.author) : null);
         // muqovani o'z omborimizga ko'chiramiz (begona sayt rasmi keyinchalik o'chib ketmasligi uchun)
         if (r.found && r.cover && body.want_cover) {
           try {
