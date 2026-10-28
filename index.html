@@ -737,7 +737,7 @@ const skelGrid = n => `<div class="grid">${Array.from({length:n},()=>`<div><div 
 function topbar(){
   return `<div class="bar gut" id="bar"><img src="${LOGO}" alt="Minor Books">
     <label class="search">${ic("search",22)}<input id="q" type="search" placeholder="Kitob yoki muallif izlash" autocomplete="off" aria-label="Qidirish" value="${esc(S.q)}">${S.q?`<button class="clr" data-clearq aria-label="Tozalash">${ic("x",20)}</button>`:""}</label>
-    ${S.isAdmin?`<button class="ibtn press adm-btn" data-admin aria-label="Admin panel">${ic("settings",22)}</button>`:""}<button class="ibtn press" data-tab="fav" aria-label="Sevimlilar">${ic("heart",22)}${S.favs.length?`<span class="dot num">${S.favs.length}</span>`:""}</button></div>`;
+    ${S.isAdmin&&S.demo?`<button class="ibtn press adm-btn" data-admin aria-label="Admin panel">${ic("settings",22)}</button>`:""}<button class="ibtn press" data-tab="fav" aria-label="Sevimlilar">${ic("heart",22)}${S.favs.length?`<span class="dot num">${S.favs.length}</span>`:""}</button></div>`;
 }
 
 /* ---------- pages ---------- */
@@ -838,8 +838,8 @@ function pageCheckout(){
     <div class="opts rise">
       <button type="button" class="press" data-del="delivery" aria-pressed="${del}"><span class="oi">${ic("delivery",24)}</span><b>Yetkazib berish</b><span>Manzilingizgacha</span></button>
       <button type="button" class="press" data-del="pickup" aria-pressed="${!del}"><span class="oi">${ic("shop",24)}</span><b>Olib ketish</b><span>Do'kondan</span></button></div>
-    ${del?`<div class="fld rise" style="--i:1">${ic("pin",24)}<div><label for="f-address">Manzil</label><textarea id="f-address" name="address" rows="2" placeholder="Shahar, tuman, ko'cha, uy">${esc(f.address)}</textarea></div></div>`:""}
-    <div class="lbl">Qabul qiluvchi</div>
+    ${del?`<div class="fld rise" style="--i:1">${ic("pin",24)}<div><label for="f-address">Manzil</label><textarea id="f-address" name="address" rows="2" placeholder="Shahar, tuman, ko'cha, uy">${esc(f.address)}</textarea></div></div>${S.geo?`<div class="note" style="margin:0">${ic("pin",20)}Manzil botga yuborgan joylashuvingizdan olindi, kuryer xaritada ko'radi. Uy va xonadon raqamini qo'shib qo'ying.</div>`:""}`:""}
+    <div class="lbl">Qabul qiluvchi</div>${S.profile?`<div class="note" style="margin:0">${ic("check",20)}Ma'lumotlaringiz botdan o'zi to'ldirildi.</div>`:""}
     <div class="fld rise" style="--i:2">${ic("user",24)}<div><label for="f-name">Ism</label><input id="f-name" name="name" value="${esc(f.name)}" autocomplete="name" placeholder="Masalan, Abdulloh"></div></div>
     <div class="fld rise" style="--i:3">${ic("phone",24)}<div><label for="f-phone">Telefon raqam</label><input id="f-phone" name="phone" type="tel" inputmode="tel" value="${esc(f.phone)}" autocomplete="tel" placeholder="+998 90 123 45 67"></div></div>
     <div class="fld rise" style="--i:4">${ic("chat",24)}<div><label for="f-comment">Izoh (ixtiyoriy)</label><input id="f-comment" name="comment" value="${esc(f.comment)}" placeholder="Qo'ng'iroq qilish vaqti va h.k."></div></div>
@@ -1067,7 +1067,7 @@ async function adminLoad(){
 }
 function openAdmin(){ A.open=true; A.edit=null; A.confirm=null; haptic(); renderAdmin(true); updateBack(); if(!A.loaded) adminLoad(); }
 function closeAdmin(){ const el=$("#adm"); A.open=false; A.edit=null; updateBack(); if(el){ el.classList.add("out"); setTimeout(()=>{ if(!A.open) $("#admRoot").innerHTML=""; },230); } }
-function adminBack(){ if(A.edit){ A.edit=null; A.confirm=null; A.err=""; renderAdmin(true); return true; } closeAdmin(); return true; }
+function adminBack(){ if(A.edit){ A.edit=null; A.confirm=null; A.err=""; renderAdmin(true); return true; } if(ADMIN_MODE&&tg){ try{ tg.close(); }catch(e){} return true; } closeAdmin(); return true; }
 
 const aField=(id,label,val,extra="")=>`<div class="afld"><label for="${id}">${label}</label><input id="${id}" value="${esc(val??"")}" ${extra}></div>`;
 function thumb(b){ return `<span class="nothumb">${ic("book",22)}</span>${b.cover_url?`<img src="${esc(b.cover_url)}" alt="" loading="lazy" onerror="this.remove()">`:""}`; }
@@ -1081,8 +1081,7 @@ function admBooks(){
    <div class="alist">${l.map((b,i)=>`<button class="arow press rise" style="--i:${Math.min(i+2,12)}" data-aedit="${b.id}"><span class="ath">${thumb(b)}</span>
      <span class="ainfo"><b>${esc(b.title)}</b><small class="num">${som(b.price)}${b.old_price?` <s>${fmt(b.old_price)}</s>`:""} · ${esc(cat(b.category_id)?.name||"Bo'limsiz")}</small>
      <span class="atags">${b.is_active===false?`<em class="g">${ic("eyeOff",13)}Yashirin</em>`:""}${b.stock<=0?`<em class="r">Tugagan</em>`:`<em class="num">${b.stock} dona</em>`}${b.is_new?`<em class="o">Yangi</em>`:""}</span></span>${ic("right",20)}</button>`).join("")||`<p class="amuted">Kitob topilmadi.</p>`}</div>
-   <div class="aseed rise"><div><b>Tayyor katalog</b><p>15 ta haqiqiy kitob, muqovalari bilan. Hozirgi barcha kitob va bo'limlar o'rniga yoziladi.</p></div>
-     ${A.confirm==="seed"?`<div class="aconf"><span>Hozirgi ${A.books.length} ta kitob o'chadi. Davom etasizmi?</span><button class="abtn red press" data-aseedyes ${A.busy?"disabled":""}>Ha, yuklash</button><button class="abtn ghost press" data-ano>Yo'q</button></div>`:`<button class="abtn ghost press" data-aseed>${ic("upload",20)}Katalogni yuklash</button>`}</div>`;
+`;
 }
 
 function admEdit(){
@@ -1170,10 +1169,8 @@ document.addEventListener("click",async e=>{
     if(d.aedit){ const b=A.books.find(x=>x.id===+d.aedit); A.edit={...b}; A.err=""; A.confirm=null; haptic(); return renderAdmin(true); }
     if(d.astk){ const el=$("#af-stock"); el.value=Math.max(0,(+el.value||0)+(+d.astk)); haptic(); return; }
     if(d.arm!==undefined){ readAForm(); A.confirm="del"; haptic("medium"); return renderAdmin(false); }
-    if(d.aseed!==undefined){ A.confirm="seed"; haptic("medium"); return renderAdmin(false); }
     if(d.ano!==undefined){ if(A.edit) readAForm(); A.confirm=null; return renderAdmin(false); }
     if(d.armyes!==undefined){ A.busy=true; renderAdmin(false); await adminApi("delete_book",{id:A.edit.id}); A.books=A.books.filter(x=>x.id!==A.edit.id); A.edit=null; A.confirm=null; A.busy=false; toast("Kitob o'chirildi"); renderAdmin(true); return reloadStore(); }
-    if(d.aseedyes!==undefined){ A.busy=true; renderAdmin(false); const r=await adminApi("seed_catalog"); A.confirm=null; A.busy=false; toast(`${r.books} ta kitob yuklandi`); await reloadStore(); return adminLoad(); }
     if(d.acopy){ try{ await navigator.clipboard.writeText(d.acopy); toast("Raqam nusxalandi"); }catch(_){ const s=t.parentElement.querySelector(".sel"); const r=document.createRange(); r.selectNodeContents(s); getSelection().removeAllRanges(); getSelection().addRange(r); } return; }
     if(d.ast){ const [id,st]=d.ast.split(":"); const o=A.orders.find(x=>x.id===+id); if(!o||o.status===st) return; const old=o.status; o.status=st; haptic(); renderAdmin(false);
       try{ await adminApi("set_order_status",{id:+id,status:st}); toast(`Holat: ${ST[st][0]}`); }catch(err){ o.status=old; renderAdmin(false); toast(err.message); } return; }
@@ -1200,13 +1197,31 @@ document.addEventListener("submit",async e=>{
   }catch(err){ A.busy=false; A.err=err.message; renderAdmin(false); }
 },true);
 
-async function checkAdmin(){
-  if(S.demo){ S.isAdmin=true; return render(false); }
-  if(!tg||!tg.initData) return;
-  try{ const r=await adminApi("whoami"); if(r.admin){ S.isAdmin=true; render(false); } }catch(e){}
+const ADMIN_MODE = location.hash==="#admin";
+// bot orqali yuborilgan ma'lumotlar bilan buyurtma formasini to'ldirish
+async function loadProfile(){
+  if(S.demo){ S.isAdmin=true; if(ADMIN_MODE) openAdmin(); else render(false); return; }
+  if(!tg||!tg.initData){ if(ADMIN_MODE) denyAdmin(); return; }
+  try{
+    const r=await adminApi("profile");
+    S.isAdmin=!!r.admin;
+    const p=r.profile;
+    if(p){
+      if(p.full_name) S.form.name=p.full_name;
+      if(p.phone) S.form.phone=p.phone;
+      if(p.address||p.lat!=null){ S.form.address=p.address||`Joylashuv: ${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}`; S.geo=p.lat!=null; S.delivery="delivery"; }
+      else if(p.step==="done"){ S.delivery="pickup"; }
+      S.profile=p;
+    }
+  }catch(e){}
+  if(ADMIN_MODE){ S.isAdmin?openAdmin():denyAdmin(); } else render(false);
+}
+function denyAdmin(){
+  $("#admRoot").innerHTML=`<div class="adm" id="adm"><div class="adm-in gut"><div class="empty" style="padding-top:80px"><div class="eic">${ic("shield",48)}</div><h3>Bu bo'lim faqat do'kon egasi uchun</h3><p>Kitoblarni ko'rish va buyurtma berish uchun do'konni oching.</p><button class="btn sm press" id="toShop">Do'konni ochish</button></div></div></div>`;
+  $("#toShop").onclick=()=>{ $("#admRoot").innerHTML=""; history.replaceState(null,"",location.pathname); };
 }
 
-init().then(checkAdmin);
+init().then(loadProfile);
 })();
 </script>
 

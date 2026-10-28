@@ -1,7 +1,6 @@
 // Minor Books — server API: admin amallari va buyurtma xabarnomasi.
 // Admin bo'lishi Telegram initData imzosi (bot tokeni bilan) va mb_admins jadvali orqali tekshiriladi.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
-import catalog from "./catalog.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false },
@@ -77,7 +76,19 @@ async function notifyOrder(order_no: string) {
     `${o.delivery_type === "delivery" ? "🚚 Yetkazib berish: " + h(o.address) : "🏪 Do'kondan olib ketadi"}\n` +
     `${o.comment ? "💬 " + h(o.comment) + "\n" : ""}\n${lines}\n\n<b>Jami: ${som(o.total)}</b>`;
   const { data: admins } = await db.from("mb_admins").select("tg_id");
-  for (const a of admins || []) await tgSend(a.tg_id, text).catch(() => {});
+  // mijoz botda joylashuv yuborgan bo'lsa, xaritada ko'rsatish
+  let loc: { lat: number; lon: number } | null = null;
+  if (o.tg_user_id && o.delivery_type === "delivery") {
+    const { data: c } = await db.from("mb_customers").select("lat,lon").eq("tg_id", o.tg_user_id).maybeSingle();
+    if (c?.lat != null && c?.lon != null) loc = { lat: c.lat, lon: c.lon };
+  }
+  for (const a of admins || []) {
+    await tgSend(a.tg_id, text).catch(() => {});
+    if (loc) await fetch(`https://api.telegram.org/bot${await botToken()}/sendLocation`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: a.tg_id, latitude: loc.lat, longitude: loc.lon }),
+    }).catch(() => {});
+  }
   if (o.tg_user_id) {
     await tgSend(o.tg_user_id, `✅ Buyurtmangiz qabul qilindi: <b>${h(o.order_no)}</b>\nJami: ${som(o.total)}\n\nOperatorimiz tez orada ${h(o.phone)} raqamiga qo'ng'iroq qilib tasdiqlaydi.`).catch(() => {});
   }
@@ -113,6 +124,11 @@ Deno.serve(async (req) => {
     const user = await tgUser(body.initData);
     const admin = await isAdmin(user?.id);
     if (action === "whoami") return json({ admin, user: user ? { id: user.id, first_name: user.first_name } : null });
+    if (action === "profile") {
+      if (!user) return json({ profile: null });
+      const { data } = await db.from("mb_customers").select("phone,full_name,lat,lon,address,step").eq("tg_id", user.id).maybeSingle();
+      return json({ profile: data, admin });
+    }
     if (!admin) return fail("Bu amal faqat admin uchun", 403);
 
     switch (action) {
@@ -168,17 +184,6 @@ Deno.serve(async (req) => {
         const { error } = await db.storage.from("mb-covers").upload(path, bytes, { contentType: type, upsert: false });
         if (error) throw error;
         return json({ url: db.storage.from("mb-covers").getPublicUrl(path).data.publicUrl });
-      }
-      case "seed_catalog": {
-        // tayyor katalogni yuklash: eski kitob va bo'limlar o'rniga
-        await db.from("mb_books").delete().gte("id", 0);
-        await db.from("mb_categories").delete().gte("id", 0);
-        const { error: ce } = await db.from("mb_categories").insert((catalog.categories as any[]).map((c: any, i: number) => ({ id: c.id, name: c.name, sort: i + 1 })));
-        if (ce) throw ce;
-        await db.rpc("mb_fix_cat_seq");
-        const { error: be } = await db.from("mb_books").insert((catalog.books as any[]).map((b: any) => cleanBook(b)));
-        if (be) throw be;
-        return json({ ok: true, books: catalog.books.length });
       }
       default:
         return fail("Noma'lum amal");
