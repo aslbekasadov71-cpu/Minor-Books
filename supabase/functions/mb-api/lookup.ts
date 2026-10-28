@@ -165,6 +165,8 @@ export function partPenalty(query: string, name: string): number {
   const q = cyr2lat(query).toLowerCase().replace(/[–—]/g, "-"), n = cyr2lat(name).toLowerCase().replace(/[–—]/g, "-");
   const one = n.match(/(\d+)\s*-\s*(juz|jild|qism|kitob)/);
   if (!one) return 0;
+  // to'plam (qutida, 1-4 juz, ...) so'ralgan, nomzod esa bitta qism
+  if (/qutida|to'plam|jildlik|\d+\s*-\s*\d+/.test(q) && !/qutida|to'plam|\d+\s*,\s*\d+/.test(n)) return 0.5;
   const same = new RegExp(`(^|\\D)${one[1]}\\s*-?\\s*${one[2]}`).test(q) || new RegExp(`(^|\\D)${one[1]}(\\D|$)`).test(q.replace(/\d+\s*-\s*\d+/g, " "));
   return same ? 0 : 0.5;
 }
